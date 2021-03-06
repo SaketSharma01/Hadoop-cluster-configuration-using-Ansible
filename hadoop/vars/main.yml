@@ -1,0 +1,5 @@
+---
+# vars file for hadoop
+
+datanode_folder: /dn
+namenode_folder: /nn

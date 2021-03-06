@@ -1,0 +1,56 @@
+
+  - name: sending jdk rpm 
+    copy:
+            src: jdk-8u171-linux-x64.rpm
+            dest: /root/jdk-8u171-linux-x64.rpm
+
+  - name: sending hadoop rpm
+    copy:
+            src: hadoop-1.2.1-1.x86_64.rpm
+            dest: /root/hadoop-1.2.1-1.x86_64.rpm
+
+  - name: installing hadoop and JDK software 
+    shell: rpm -i /root/jdk-8u171-linux-x64.rpm; rpm -i /root/hadoop-1.2.1-1.x86_64.rpm --force
+
+  - name: Creating a folder for master
+    file:
+          path: "{{ namenode_folder }}"
+          state: directory
+    when: ansible_host in groups['master']
+
+  - name: Creating folder for Slaves
+    file:
+          path: "{{ datanode_folder }}"
+          state: directory
+    when: ansible_host in groups['slaves']
+
+  - name: configuring hdfs-site.xml file for master
+    template:
+            src: "hdfs-site.xml"
+            dest: "/etc/hadoop/hdfs-site.xml"
+    with_items: 
+            - { type: 'name', dir: '{{ namenode_folder }}' }
+    when: ansible_host in groups['master']
+
+  - name: Configuring hdfs-site.xml file for slaves
+    template:
+            src: "hdfs-site.xml"
+            dest: "/etc/hadoop/hdfs-site.xml"
+    with_items: 
+            - { type: 'data', dir: '{{ datanode_folder }}' }
+    when: ansible_host in groups['slaves']
+
+  - name: Configuring core-site.xml file for master and slaves
+    template:
+            src: "core-site.xml"
+            dest: "/etc/hadoop/core-site.xml"
+    with_items: "{{groups['master']}}"
+   
+  - name: Formatting and starting namenode
+    shell: echo Y | hadoop namenode -format; hadoop-daemon.sh start namenode; systemctl stop firewalld
+    when: ansible_host in groups['master']
+
+  - name: Starting datanode
+    shell: hadoop-daemon.sh start datanode
+    when: ansible_host in groups['slaves']
+
