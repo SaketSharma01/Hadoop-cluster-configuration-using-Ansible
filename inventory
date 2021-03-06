@@ -1,0 +1,11 @@
+[master]
+master.eg.com
+
+[slaves]
+node1.eg.com
+
+[cluster:children]
+master
+slaves
+
+
